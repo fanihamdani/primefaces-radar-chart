@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:p="http://primefaces.org/ui">
+<h:head>
+    <script src="js/Chart.min.js" type="text/javascript"/>
+</h:head>
+<h:body>
+    <h:form>
+        <p:commandButton value="Show Data"
+                         actionListener="#{radarChartBean.search}"
+                         update="tbl"
+                         oncomplete="fetchChartData()"/>
+
+        <br/>
+        <br/>
+
+        <p:dataTable id="tbl" value="#{radarChartBean.data}" var="model">
+            <p:column headerText="Item">
+                <h:outputText value="#{model.item}"/>
+            </p:column>
+            <p:column headerText="Q1">
+                <h:outputText value="#{model.amountQ1}"/>
+            </p:column>
+            <p:column headerText="Q2">
+                <h:outputText value="#{model.amountQ2}"/>
+            </p:column>
+            <p:column headerText="Q3">
+                <h:outputText value="#{model.amountQ3}"/>
+            </p:column>
+            <p:column headerText="Q4">
+                <h:outputText value="#{model.amountQ4}"/>
+            </p:column>
+        </p:dataTable>
+
+        <div style="margin: 10px">
+            <canvas id="radar" width="400" height="400"></canvas>
+            <div id="radarLegend" style="width: 400px;"></div>
+        </div>
+
+        <script>
+            //<![CDATA[
+
+            var chart = null;
+
+            function createRadarChart(data) {
+                var ctx = $("#radar")[0].getContext("2d");
+                chart = new Chart(ctx).Radar(data, {
+                    legendTemplate: '' +
+                    '<ul style="width: 230px; margin: 0 auto;">' +
+                    '   <% for (var i=0; i<datasets.length; i++){ %>' +
+                    '   <li style="float: left; margin-left: 30px; color: <%= datasets[i].strokeColor %>">' +
+                    '       <span style="color: #333; font-family: Arial; font-size: 0.8em;">' +
+                    '           <%= datasets[i].label %>' +
+                    '       </span>' +
+                    '   </li>' +
+                    '   <% } %>' +
+                    '</ul>'
+                });
+                $("#radarLegend").html(chart.generateLegend());
+            }
+
+            function stringFromChars(chars) {
+                var s = "";
+                for(var i=0; i<chars.length; i++) {
+                    s += String.fromCharCode(chars[i]);
+                }
+                return s;
+            }
+
+            function parseLabels(chartData) {
+                var labels = [];
+                for(var i=0; i<chartData.labels.length; i++) {
+                    var chars = chartData.labels[i].label;
+                    labels.push(stringFromChars(chars));
+                }
+                return labels;
+            }
+
+            function doCreateRadarChart(xhr, status, args) {
+                if (chart) {
+                    chart.destroy();
+                    $("#radarLegend").html('');
+                }
+                if (args.chartData) {
+                    var chartData = args.chartData;
+                    chartData.labels = parseLabels(chartData);
+                    createRadarChart(chartData);
+                }
+            }
+
+            //]]>
+        </script>
+
+        <p:remoteCommand name="fetchChartData"
+                         action="#{radarChartBean.prepareChartData}"
+                         oncomplete="doCreateRadarChart(xhr, status, args);"/>
+
+    </h:form>
+</h:body>
+</html>
